@@ -1,12 +1,29 @@
 from typing import List, Optional
 from mcp.server.fastmcp import FastMCP
-from starlette.middleware.trustedhost import TrustedHostMiddleware
+# Import the Security Settings class
+from mcp.server.transport_security import TransportSecuritySettings
 from database import AsyncSessionLocal
 import logic
 import schemas
 
-mcp = FastMCP("PadelClubManager")
+# CONFIGURATION
+security_settings = TransportSecuritySettings(
+    enable_dns_rebinding_protection=True,
+    allowed_hosts=[
+        "localhost",
+        "127.0.0.1",
+        "0.0.0.0",
+        "agents-padelos-mcp-server.tn7mxq.easypanel.host"
+    ]
+)
 
+# Initialize Server with Security Settings
+mcp = FastMCP(
+    "PadelClubManager",
+    transport_security=security_settings
+)
+
+# Helpers
 async def with_db(func, *args, **kwargs):
     async with AsyncSessionLocal() as session:
         return await func(session, *args, **kwargs)
@@ -66,6 +83,3 @@ async def check_availability_and_reserve(start_time: str, end_time: str, member_
     start_time/end_time format: ISO string (e.g. 2024-01-01T10:00:00+00:00).
     """
     return await with_db(logic.reserve_court, start_time, end_time, member_ids, court_id)
-
-if __name__ == "__main__":
-    mcp.run()
