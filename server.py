@@ -6,7 +6,6 @@ import logic
 import schemas
 
 mcp = FastMCP("PadelClubManager")
-mcp.sse_app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 
 async def with_db(func, *args, **kwargs):
     async with AsyncSessionLocal() as session:
