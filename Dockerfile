@@ -27,7 +27,5 @@ ENV PORT=8000
 # Expose the port Easypanel will use
 EXPOSE 8000
 
-# Run the server using Uvicorn (Production ASGI Server)
-# We target 'server:mcp.sse_app' 
-# This assumes 'server.py' has an object named 'mcp' which is a FastMCP instance
-CMD ["uvicorn", "server:mcp.sse_app", "--host", "0.0.0.0", "--port", "8000"]
+# Run the server using Uvicorn
+CMD ["uvicorn", "server:mcp.sse_app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*"]
