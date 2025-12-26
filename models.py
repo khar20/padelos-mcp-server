@@ -2,12 +2,10 @@ from datetime import date, datetime
 from typing import List, Optional
 from sqlalchemy import String, Integer, Date, ForeignKey, Text, CheckConstraint, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import TIMESTAMP
+from sqlalchemy.dialects.postgresql import TIMESTAMP, ENUM
 
 class Base(DeclarativeBase):
     pass
-
-# --- User Provided Schema Entities ---
 
 class Member(Base):
     __tablename__ = "members"
@@ -18,8 +16,16 @@ class Member(Base):
     phone_number: Mapped[Optional[str]] = mapped_column(String(20))
     level_category: Mapped[Optional[str]] = mapped_column(String(20))
     skill_level: Mapped[Optional[str]] = mapped_column(String(20))
-    status: Mapped[str] = mapped_column(String, default='Pendiente') # Enum mapped as String for flexibility
-    membership: Mapped[str] = mapped_column(String) # Enum mapped as String
+    
+    status: Mapped[str] = mapped_column(
+        ENUM(name='member_status', create_type=False), 
+        default='Pendiente'
+    )
+    
+    membership: Mapped[str] = mapped_column(
+        ENUM(name='membership_type', create_type=False)
+    )
+    
     join_date: Mapped[date] = mapped_column(Date)
     membership_expiry_date: Mapped[Optional[date]] = mapped_column(Date)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
@@ -29,7 +35,12 @@ class Court(Base):
     
     court_id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100))
-    status: Mapped[str] = mapped_column(String, default='Disponible') # Enum
+    
+    status: Mapped[str] = mapped_column(
+        ENUM(name='court_status', create_type=False), 
+        default='Disponible'
+    )
+    
     type: Mapped[Optional[str]] = mapped_column(String(50), default='Pádel')
 
 class Reservation(Base):
@@ -39,7 +50,12 @@ class Reservation(Base):
     court_id: Mapped[int] = mapped_column(ForeignKey("courts.court_id", ondelete="RESTRICT"))
     start_time: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True))
     end_time: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True))
-    status: Mapped[str] = mapped_column(String, default='Pendiente') # Enum
+    
+    status: Mapped[str] = mapped_column(
+        ENUM(name='reservation_status', create_type=False), 
+        default='Pendiente'
+    )
+    
     notes: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
 
@@ -53,13 +69,9 @@ class ReservationMember(Base):
     reservation_id: Mapped[int] = mapped_column(ForeignKey("reservations.reservation_id", ondelete="CASCADE"), primary_key=True)
     member_id: Mapped[int] = mapped_column(ForeignKey("members.member_id", ondelete="CASCADE"), primary_key=True)
 
-# --- Agent Auxiliary Tables (Required for Matchmaking Logic) ---
+# Auxiliary Tables
 
 class MatchRequest(Base):
-    """
-    Extensions for the Agent Logic. 
-    Links to 'Member' via member_id (Best Practice).
-    """
     __tablename__ = "match_requests"
 
     request_id: Mapped[int] = mapped_column(primary_key=True)
@@ -67,7 +79,6 @@ class MatchRequest(Base):
     match_datetime: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True))
     status: Mapped[str] = mapped_column(String, default="Pending")
 
-    # Relationships
     requester: Mapped["Member"] = relationship()
     invitations: Mapped[List["MatchInvitation"]] = relationship(back_populates="request")
 
